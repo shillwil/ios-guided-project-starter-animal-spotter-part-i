@@ -27,15 +27,62 @@ class LoginViewController: UIViewController, UITextFieldDelegate {
         super.viewDidLoad()
 
         // customize button appearance
+        signInButton.backgroundColor = UIColor(hue: 190/360, saturation: 70/100, brightness: 80/100, alpha: 1.0)
+        signInButton.tintColor = .white
+        signInButton.layer.cornerRadius = 8.0
     }
     
     // MARK: - Action Handlers
     
     @IBAction func buttonTapped(_ sender: UIButton) {
         // perform login or sign up operation based on loginType
+        guard let apiController = apiController else { return }
+        if let username = usernameTextField.text,
+            !username.isEmpty,
+            let password = passwordTextField.text,
+            !password.isEmpty {
+            let user = User(username: username, password: password)
+            if loginType == .signUp {
+                apiController.signUp(with: user) { (error) in
+                    if let error = error {
+                        print("Error occured during sign up: \(error)")
+                    } else {
+                        DispatchQueue.main.async {
+                            let alertController = UIAlertController(title: "Sign up Successful", message: "Now please log in.", preferredStyle: .alert)
+                            let alertAction = UIAlertAction(title: "Ok", style: .default, handler: nil)
+                            alertController.addAction(alertAction)
+                            self.present(alertController, animated: true, completion:  {
+                                self.loginType = .signIn
+                                self.loginTypeSegmentedControl.selectedSegmentIndex = 1
+                                self.signInButton.setTitle("Sign In", for: .normal)
+                            })
+                        }
+                    }
+                }
+            } else {
+                apiController.signIn(with: user) { (error) in
+                    if let error = error {
+                        print("Error occured during sign up: \(error)")
+                    } else {
+                        DispatchQueue.main.async {
+                            self.dismiss(animated: true, completion: nil)
+                        }
+                    }
+                }
+            }
+        }
     }
     
     @IBAction func signInTypeChanged(_ sender: UISegmentedControl) {
         // switch UI between modes
+        if sender.selectedSegmentIndex == 0 {
+            // 0 = signup
+            loginType = .signUp
+            signInButton.setTitle("Sign up", for: .normal)
+        } else {
+            // 1 = sign in
+            loginType = .signIn
+            signInButton.setTitle("Sign In", for: .normal)
+        }
     }
 }
